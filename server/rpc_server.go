@@ -13,17 +13,17 @@ import (
 
 	"github.com/pkg/errors"
 
-	"go-micro.dev/v4/broker"
-	"go-micro.dev/v4/codec"
-	log "go-micro.dev/v4/logger"
-	"go-micro.dev/v4/metadata"
-	"go-micro.dev/v4/registry"
-	"go-micro.dev/v4/transport"
-	"go-micro.dev/v4/transport/headers"
-	"go-micro.dev/v4/util/addr"
-	"go-micro.dev/v4/util/backoff"
-	mnet "go-micro.dev/v4/util/net"
-	"go-micro.dev/v4/util/socket"
+	"go-micro.dev/v5/broker"
+	"go-micro.dev/v5/codec"
+	log "go-micro.dev/v5/logger"
+	"go-micro.dev/v5/metadata"
+	"go-micro.dev/v5/registry"
+	"go-micro.dev/v5/transport"
+	"go-micro.dev/v5/transport/headers"
+	"go-micro.dev/v5/util/addr"
+	"go-micro.dev/v5/util/backoff"
+	mnet "go-micro.dev/v5/util/net"
+	"go-micro.dev/v5/util/socket"
 )
 
 type rpcServer struct {
@@ -205,7 +205,9 @@ func (s *rpcServer) ServeConn(sock transport.Socket) {
 		// If we don't have a socket and its a stream
 		// Check if its a last stream EOS error
 		if !ok && stream && msg.Header[headers.Error] == errLastStreamResponse.Error() {
+			closeConn = true
 			pool.Release(psock)
+
 			continue
 		}
 
@@ -512,7 +514,11 @@ func (s *rpcServer) Deregister() error {
 			logger.Logf(log.InfoLevel, "Unsubscribing %s from topic: %s", node.Id, sub.Topic())
 
 			if err := sub.Unsubscribe(); err != nil {
-				logger.Logf(log.ErrorLevel, "Failed to unsubscribe subscriber nr. %d from topic %s: %v", i+1, sub.Topic(), err)
+				logger.Logf(log.ErrorLevel,
+					"Failed to unsubscribe subscriber nr. %d from topic %s: %v",
+					i+1,
+					sub.Topic(),
+					err)
 			}
 		}
 
@@ -759,7 +765,11 @@ Loop:
 
 			rerr := s.opts.RegisterCheck(s.opts.Context)
 			if rerr != nil && registered {
-				logger.Logf(log.ErrorLevel, "Server %s-%s register check error: %s, deregister it", config.Name, config.Id, rerr)
+				logger.Logf(log.ErrorLevel,
+					"Server %s-%s register check error: %s, deregister it",
+					config.Name,
+					config.Id,
+					rerr)
 				// deregister self in case of error
 				if err := s.Deregister(); err != nil {
 					logger.Logf(log.ErrorLevel, "Server %s-%s deregister error: %s", config.Name, config.Id, err)
@@ -809,7 +819,11 @@ Loop:
 	s.setOptsAddr(addr)
 }
 
-func (s *rpcServer) serveReq(ctx context.Context, msg transport.Message, req *rpcRequest, resp *rpcResponse, rcodec codec.Codec) {
+func (s *rpcServer) serveReq(ctx context.Context,
+	msg transport.Message,
+	req *rpcRequest,
+	resp *rpcResponse,
+	rcodec codec.Codec) {
 	logger := s.opts.Logger
 	router := s.getRouter()
 
